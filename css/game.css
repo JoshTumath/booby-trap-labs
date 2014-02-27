@@ -1,0 +1,56 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+#game {
+  position: relative;
+  overflow: hidden;
+  width: 640px;
+  height: 480px;
+}
+
+#game-menu,
+#game-canvas,
+.game-dialog {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+.game-dialog {
+  z-index: 1;
+  margin: 32px;
+}
+
+/* **** *
+ * Menu *
+ * **** */
+#game-menu h1 {
+  text-align: center;
+}
+
+#game-menu ul {
+  margin: 0;
+  padding: 0;
+}
+
+#game-menu li {
+  display: block;
+}
+
+#game-menu button {
+  display: block;
+  margin: auto;
+  padding: 0.25em 0;
+  width: 256px;
+  background: #339966;
+  border: none;
+  font: 24px sans-serif;
+  color: white;
+}
+
+#game-menu li + li {
+  margin-top: 16px;
+}
