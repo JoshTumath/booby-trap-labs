@@ -20,7 +20,7 @@ $RECYCLE.BIN/
 ## NetBeans
 #############
 
-nbproject/private/
+nbproject/
 build/
 nbbuild/
 dist/
