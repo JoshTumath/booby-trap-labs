@@ -15,40 +15,26 @@ function GameManager(element) {
   // Set up the elements used by the game
   this._gameManagerElement = element;
   this._gameManagerElement.innerHTML =
-          '<div id="game-menu" hidden>' +
-          '  <h1>Booby Trap Tester</h1>' +
+      '<div id="game-menu" hidden></div>' +
 
-          '  <ul>' +
-          '    <li>' +
-          '      <button type="button">Start</button>' +
-          '    </li>' +
-          '    <li>' +
-          '      <button type="button">Options</button>' +
-          '    </li>' +
-          '    <li>' +
-          '      <button type="button">Help</button>' +
-          '    </li>' +
-          '  </ul>' +
-          '</div>' +
-          
-          '<canvas id="game-canvas" width="640" height="480" hidden></canvas>' +
+      '<canvas id="game-canvas" width="640" height="480" hidden></canvas>' +
 
-          '<div id="game-options" hidden>' +
-          '  <h2>Options</h2>' +
-          '  <label>' +
-          '    <input type="checkbox">' +
-          '    Mute audio' +
-          '  </label>' +
-          '</div>' +
+      '<div id="game-options" hidden>' +
+      '  <h2>Options</h2>' +
+      '  <label>' +
+      '    <input type="checkbox">' +
+      '    Mute audio' +
+      '  </label>' +
+      '</div>' +
 
-          '<div id="game-help" hidden>' +
-          '  <h2>Help</h2>' +
-          '  <p>Foo</p>' +
-          '</div>';
+      '<div id="game-help" hidden>' +
+      '  <h2>Help</h2>' +
+      '  <p>Foo</p>' +
+      '</div>';
   
   // Instantiate the objects that deal with each element
-  this._game = new Game(document.getElementById("game-canvas"));
   this._menu = new Menu(document.getElementById("game-menu"));
+  this._game = new Game(document.getElementById("game-canvas"));
   this._options = new Dialog(document.getElementById("game-options"));
   this._help = new Dialog(document.getElementById("game-help"));
   
@@ -66,6 +52,20 @@ function GameManager(element) {
  */
 function Menu(element) {
   this._menuElement = element;
+  this._menuElement.innerHTML = 
+      '<h1>Booby Trap Tester</h1>' +
+
+      '<ul>' +
+      '  <li>' +
+      '    <button type="button">Start</button>' +
+      '  </li>' +
+      '  <li>' +
+      '    <button type="button">Options</button>' +
+      '  </li>' +
+      '  <li>' +
+      '    <button type="button">Help</button>' +
+      '  </li>' +
+      '</ul>';
 }
 
 Menu.prototype = {

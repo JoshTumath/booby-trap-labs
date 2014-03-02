@@ -8,6 +8,7 @@
   width: 640px;
   height: 480px;
   background: black;
+  font-family: "Averia Sans Libre", cursive;
   color: white;
 }
 
@@ -26,18 +27,25 @@
 #game-menu {
   padding: 64px 0 0;
   background: url("../images/menu-bg.jpg") black;
-  animation: 20s infinite menu-bg;
+  animation: 24s infinite menu-bg;
 }
 
 @keyframes menu-bg {
-  0%   { background-position:   0     0; }
-  50%  { background-position: -60px   0; }
-  100% { background-position:   0     0; }
+  0%   { background-position:   0   0; }
+  50%  { background-position: -60px 0; }
+  100% { background-position:   0   0; }
 }
 
 #game-menu h1 {
   font-size: 48px;
   text-align: center;
+  animation: 4s infinite menu-heading;
+}
+
+@keyframes menu-heading {
+  0%   { transform: rotate(-5deg); }
+  50%  { transform: rotate( 5deg); }
+  100% { transform: rotate(-5deg); }
 }
 
 #game-menu ul {
@@ -57,7 +65,8 @@
   background: #DFAE62;
   border: none;
   box-shadow: 0 4px 0 0 #B8873D;
-  font: 24px sans-serif;
+  font-family: inherit;
+  font-size: 24px;
   color: white;
 }
 
