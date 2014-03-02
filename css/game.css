@@ -7,6 +7,8 @@
   overflow: hidden;
   width: 640px;
   height: 480px;
+  background: black;
+  color: white;
 }
 
 #game-menu,
@@ -22,10 +24,19 @@
  * Menu *
  * **** */
 #game-menu {
-  padding: 2rem 0;
+  padding: 64px 0 0;
+  background: url("../images/menu-bg.jpg") black;
+  animation: 20s infinite menu-bg;
+}
+
+@keyframes menu-bg {
+  0%   { background-position:   0     0; }
+  50%  { background-position: -60px   0; }
+  100% { background-position:   0     0; }
 }
 
 #game-menu h1 {
+  font-size: 48px;
   text-align: center;
 }
 
@@ -75,7 +86,7 @@
   left: 0;
   z-index: 1;
   padding: 32px;
-  background: rgba(255, 255, 255, 0.75);
+  background: rgba(0, 0, 0, 0.75);
 }
 
 .game-dialog-close {
