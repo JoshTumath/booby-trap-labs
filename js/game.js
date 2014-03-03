@@ -53,7 +53,7 @@ function GameManager(element) {
 function Menu(element) {
   this._menuElement = element;
   this._menuElement.innerHTML = 
-      '<h1>Booby Trap Tester</h1>' +
+      '<h1>The <strong>Booby Trap Labs</strong></h1>' +
 
       '<ul>' +
       '  <li>' +
