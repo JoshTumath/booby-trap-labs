@@ -27,7 +27,14 @@
 #game-menu {
   padding: 64px 0 0;
   background: url("../images/menu-bg.jpg") black;
+  -webkit-animation: 24s infinite menu-bg;
   animation: 24s infinite menu-bg;
+}
+
+@-webkit-keyframes menu-bg {
+  0%   { background-position:   0   0; }
+  50%  { background-position: -60px 0; }
+  100% { background-position:   0   0; }
 }
 
 @keyframes menu-bg {
@@ -39,7 +46,14 @@
 #game-menu h1 {
   font-size: 48px;
   text-align: center;
+  -webkit-animation: 4s infinite menu-heading;
   animation: 4s infinite menu-heading;
+}
+
+@-webkit-keyframes menu-heading {
+  0%   { -webkit-transform: rotate(-5deg); }
+  50%  { -webkit-transform: rotate( 5deg); }
+  100% { -webkit-transform: rotate(-5deg); }
 }
 
 @keyframes menu-heading {
