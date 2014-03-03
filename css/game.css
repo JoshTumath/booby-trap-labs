@@ -100,6 +100,7 @@
 
 #game-menu button:active {
   box-shadow: none;
+  -webkit-transform: translateY(4px);
   transform: translateY(4px);
 }
 
@@ -139,6 +140,7 @@
 
 .game-dialog-close:active {
   box-shadow: none;
+  -webkit-transform: translateY(4px);
   transform: translateY(4px);
 }
 
@@ -149,4 +151,19 @@
 .game-dialog h2 {
   margin: 0 0 32px;
   font-size: 32px;
+}
+
+
+/* ******** *
+ * Gameplay *
+ * ******** */
+#game-time {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 24px;
+}
+
+#game-time span {
+  font-family: monospace;
 }

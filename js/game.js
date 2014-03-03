@@ -17,7 +17,7 @@ function GameManager(element) {
   this._gameManagerElement.innerHTML =
       '<div id="game-menu" hidden></div>' +
 
-      '<canvas id="game-canvas" width="640" height="480" hidden></canvas>' +
+      '<div id="game-game" hidden></div>' +
 
       '<div id="game-options" hidden>' +
       '  <h2>Options</h2>' +
@@ -34,7 +34,7 @@ function GameManager(element) {
   
   // Instantiate the objects that deal with each element
   this._menu = new Menu(document.getElementById("game-menu"));
-  this._game = new Game(document.getElementById("game-canvas"));
+  this._game = new Game(document.getElementById("game-game"));
   this._options = new Dialog(document.getElementById("game-options"));
   this._help = new Dialog(document.getElementById("game-help"));
   
@@ -142,13 +142,60 @@ Dialog.prototype = {
 };
 
 
-function Game() {
-  // TODO
+function Game(element) {
+  this._gameElement = element;
+  this._gameElement.innerHTML =
+      '<canvas width="640" height="480" hidden></canvas>' +
+      '<div id="game-time"></div>';
+  
+  this._time = new TimeCounter(document.getElementById("game-time"));
+  this._time.play();
 }
 
 Game.prototype = {
   start: function () {
+    this._gameElement.hidden = false;
     // TODO
+  }
+};
+
+
+/**
+ * A class managing a counter that can be stopped and started.
+ * @param {HTMLElement} element an element containing a placeholder for the
+ *                              timer
+ */
+function TimeCounter(element) {
+  this._timeElement = element;
+  this._timeElement.innerHTML = 'Time: <span>0</span>';
+  this._counterElement = this._timeElement.getElementsByTagName("span")[0];
+  
+  this._seconds = 0;
+}
+
+TimeCounter.prototype = {
+  play: function () {
+    var self = this;
+    
+    self._interval = window.setInterval(function () {
+      self._seconds++;
+      self._writeTime();
+    }, 1000);
+  },
+  
+  pause: function () {
+    window.clearInterval(this._interval);
+  },
+  
+  reset: function () {
+    this.pause();
+    this._seconds = 0;
+    this._writeTime();
+  },
+  
+  _writeTime: function () {
+    // XXX: Would be better if displayed minutes and seconds
+    this._counterElement.innerHTML = this._seconds;
   }
 };
 
