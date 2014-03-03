@@ -23,7 +23,7 @@ function GameManager(element) {
       '  <h2>Options</h2>' +
       '  <label>' +
       '    <input type="checkbox">' +
-      '    Mute audio' +
+      '    Mute music' +
       '  </label>' +
       '</div>' +
 
@@ -37,6 +37,11 @@ function GameManager(element) {
   this._game = new Game(document.getElementById("game-game"));
   this._options = new Dialog(document.getElementById("game-options"));
   this._help = new Dialog(document.getElementById("game-help"));
+  
+  // TODO: Give music its own class
+  var music = new Audio("audio/music.mp3");
+  music.loop = true;
+  music.play();
   
   // Start the system
   this._menu.initMenuEvents(this._game, this._options, this._help);
@@ -149,12 +154,12 @@ function Game(element) {
       '<div id="game-time"></div>';
   
   this._time = new TimeCounter(document.getElementById("game-time"));
-  this._time.play();
 }
 
 Game.prototype = {
   start: function () {
     this._gameElement.hidden = false;
+    this._time.play();
     // TODO
   }
 };
