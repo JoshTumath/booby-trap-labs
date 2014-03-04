@@ -28,15 +28,16 @@ function GameManager(element) {
   
   // Instantiate the objects that deal with each element
   this._menu = new Menu(document.getElementById("game-menu"));
-  this._audio = new AudioManager(document.getElementById("game-controls"));
+  this._settings = new Settings(document.getElementById("game-controls"));
   this._game = new Game(document.getElementById("game-game"));
   this._help = new Dialog(document.getElementById("game-help"));
   
-  // Set the audio
-  this._audio.setMusic("audio/music.mp3");
+  // Configure the settings
+  this._settings.initEvents(this._help);
+  this._settings.setMusic("audio/music.mp3");
   
   // Start the system
-  this._menu.initEvents(this._game, this._options, this._help);
+  this._menu.initEvents(this._game);
   this._menu.show();
 }
 
@@ -52,17 +53,7 @@ function Menu(element) {
   this._menuElement.innerHTML = 
       '<h1>The <strong>Booby Trap Labs</strong></h1>' +
 
-      '<ul>' +
-      '  <li>' +
-      '    <button type="button">Start</button>' +
-      '  </li>' +
-      '  <li>' +
-      '    <button type="button">Options</button>' +
-      '  </li>' +
-      '  <li>' +
-      '    <button type="button">Help</button>' +
-      '  </li>' +
-      '</ul>';
+      '<button type="button">Start</button>';
 }
 
 Menu.prototype = {
@@ -74,24 +65,12 @@ Menu.prototype = {
     this._menuElement.hidden = true;
   },
   
-  initEvents: function (game, options, help) {
+  initEvents: function (game) {
     var self = this;
-    var buttons = this._menuElement.getElementsByTagName("button");
     
-    // Game
-    buttons[0].addEventListener("click", function () {
+    this._menuElement.getElementsByTagName("button")[0].addEventListener("click", function () {
       self.hide();
       game.start();
-    }, false);
-    
-    // Options
-    buttons[1].addEventListener("click", function () {
-      options.open();
-    }, false);
-    
-    // Help
-    buttons[2].addEventListener("click", function () {
-      help.open();
     }, false);
   }
 };
@@ -158,27 +137,30 @@ Game.prototype = {
 
 
 /**
- * A class managing the audio played in the game. Also provides controls to mute
- * the audio.
+ * A class managing settings including audio and displaying help information.
  * @param {HTMLElement} element an empty element containing a placeholder for
  *                              the audio controls
  */
-function AudioManager(element) {
+function Settings(element) {
   this._controlsElement = element;
   this._controlsElement.innerHTML =
       '<button type="button">' +
       '  <img src="images/music.png" alt="Mute music">' +
+      '</button>' +
+      
+      '<button type="button">' +
+      '  <img src="images/help.png" alt="Help">' +
       '</button>';
   
-  this._musicElement = this._controlsElement.getElementsByTagName("button")[0];
+  var buttons = this._controlsElement.getElementsByTagName("button");
+  this._musicButton = buttons[0];
+  this._helpButton = buttons[1];
   
   this._music = new Audio();
   this._music.loop = true;
-  
-  this._initEvents();
 }
 
-AudioManager.prototype = {
+Settings.prototype = {
   setMusic: function (file) {
     this._music.src = file;
     this._music.play();
@@ -191,7 +173,7 @@ AudioManager.prototype = {
   mute: function () {
     this._music.muted = true;
     
-    var buttonImage = this._musicElement.getElementsByTagName("img")[0];
+    var buttonImage = this._musicButton.getElementsByTagName("img")[0];
     buttonImage.src = "images/music-muted.png";
     buttonImage.alt = "Unmute music";
   },
@@ -199,20 +181,24 @@ AudioManager.prototype = {
   unmute: function () {
     this._music.muted = false;
     
-    var buttonImage = this._musicElement.getElementsByTagName("img")[0];
+    var buttonImage = this._musicButton.getElementsByTagName("img")[0];
     buttonImage.src = "images/music.png";
     buttonImage.alt = "Mute music";
   },
   
-  _initEvents: function () {
+  initEvents: function (help) {
     var self = this;
     
-    this._musicElement.addEventListener("click", function () {
+    this._musicButton.addEventListener("click", function () {
       if (self.isMuted()) {
         self.unmute();
       } else {
         self.mute();
       }
+    }, false);
+    
+    this._helpButton.addEventListener("click", function () {
+      help.open();
     }, false);
   }
 };
