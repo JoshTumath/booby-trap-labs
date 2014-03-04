@@ -16,16 +16,10 @@ function GameManager(element) {
   this._gameManagerElement = element;
   this._gameManagerElement.innerHTML =
       '<div id="game-menu" hidden></div>' +
+      
+      '<div id="game-controls"></div>' +
 
       '<div id="game-game" hidden></div>' +
-
-      '<div id="game-options" hidden>' +
-      '  <h2>Options</h2>' +
-      '  <label>' +
-      '    <input type="checkbox">' +
-      '    Mute music' +
-      '  </label>' +
-      '</div>' +
 
       '<div id="game-help" hidden>' +
       '  <h2>Help</h2>' +
@@ -34,17 +28,15 @@ function GameManager(element) {
   
   // Instantiate the objects that deal with each element
   this._menu = new Menu(document.getElementById("game-menu"));
+  this._audio = new AudioManager(document.getElementById("game-controls"));
   this._game = new Game(document.getElementById("game-game"));
-  this._options = new Dialog(document.getElementById("game-options"));
   this._help = new Dialog(document.getElementById("game-help"));
   
-  // TODO: Give music its own class
-  var music = new Audio("audio/music.mp3");
-  music.loop = true;
-  music.play();
+  // Set the audio
+  this._audio.setMusic("audio/music.mp3");
   
   // Start the system
-  this._menu.initMenuEvents(this._game, this._options, this._help);
+  this._menu.initEvents(this._game, this._options, this._help);
   this._menu.show();
 }
 
@@ -52,8 +44,8 @@ function GameManager(element) {
 /**
  * A class dealing with the main menu of the game. It includes buttons for
  * starting the game, viewing the options and viewing the help information.
- * @param {HTMLElement} element a placeholder element that will contain the
- *                              main menu of the game
+ * @param {HTMLElement} element an empty placeholder element that will contain
+ *                              the main menu of the game
  */
 function Menu(element) {
   this._menuElement = element;
@@ -82,7 +74,7 @@ Menu.prototype = {
     this._menuElement.hidden = true;
   },
   
-  initMenuEvents: function (game, options, help) {
+  initEvents: function (game, options, help) {
     var self = this;
     var buttons = this._menuElement.getElementsByTagName("button");
     
@@ -108,8 +100,8 @@ Menu.prototype = {
 /**
  * A class that creates a simple dialog box that appears above what is currently
  * being displayed.
- * @param {HTMLElement} element an element containing the contents of the dialog
- *                              box
+ * @param {HTMLElement} element an empty element containing the contents of the
+ *                              dialog box
  */
 function Dialog(element) {
   this._windowElement = element;
@@ -166,9 +158,70 @@ Game.prototype = {
 
 
 /**
+ * A class managing the audio played in the game. Also provides controls to mute
+ * the audio.
+ * @param {HTMLElement} element an empty element containing a placeholder for
+ *                              the audio controls
+ */
+function AudioManager(element) {
+  this._controlsElement = element;
+  this._controlsElement.innerHTML =
+      '<button type="button">' +
+      '  <img src="images/music.png" alt="Mute music">' +
+      '</button>';
+  
+  this._musicElement = this._controlsElement.getElementsByTagName("button")[0];
+  
+  this._music = new Audio();
+  this._music.loop = true;
+  
+  this._initEvents();
+}
+
+AudioManager.prototype = {
+  setMusic: function (file) {
+    this._music.src = file;
+    this._music.play();
+  },
+  
+  isMuted: function () {
+    return this._music.muted;
+  },
+  
+  mute: function () {
+    this._music.muted = true;
+    
+    var buttonImage = this._musicElement.getElementsByTagName("img")[0];
+    buttonImage.src = "images/music-muted.png";
+    buttonImage.alt = "Unmute music";
+  },
+  
+  unmute: function () {
+    this._music.muted = false;
+    
+    var buttonImage = this._musicElement.getElementsByTagName("img")[0];
+    buttonImage.src = "images/music.png";
+    buttonImage.alt = "Mute music";
+  },
+  
+  _initEvents: function () {
+    var self = this;
+    
+    this._musicElement.addEventListener("click", function () {
+      if (self.isMuted()) {
+        self.unmute();
+      } else {
+        self.mute();
+      }
+    }, false);
+  }
+};
+
+
+/**
  * A class managing a counter that can be stopped and started.
- * @param {HTMLElement} element an element containing a placeholder for the
- *                              timer
+ * @param {HTMLElement} element an empty element containing a placeholder for
+ *                              the timer
  */
 function TimeCounter(element) {
   this._timeElement = element;
