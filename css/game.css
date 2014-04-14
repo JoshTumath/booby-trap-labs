@@ -6,14 +6,16 @@
   position: relative;
   overflow: hidden;
   width: 640px;
-  height: 480px;
+  height: 640px;
   background: black;
   font-family: "Averia Sans Libre", cursive;
   color: white;
 }
 
 #game-menu,
-#game-canvas {
+#game-canvas,
+#game-background,
+#game-foreground {
   position: absolute;
   top: 0;
   right: 0;
@@ -26,26 +28,24 @@
  * **** */
 #game-menu {
   padding: 64px 0 0;
-  background: url("../images/menu-bg.jpg") black;
-  -webkit-animation: 24s infinite menu-bg;
-  animation: 24s infinite menu-bg;
+  background: url("../images/menu-bg.png") black;
+  -webkit-animation: 5s infinite linear menu-bg;
+  animation: 5s infinite linear menu-bg;
 }
 
 @-webkit-keyframes menu-bg {
-  0%   { background-position:   0   0; }
-  50%  { background-position: -60px 0; }
-  100% { background-position:   0   0; }
+  0%   { background-position:     0     0; }
+  100%  { background-position: -128px 128px; }
 }
 
 @keyframes menu-bg {
-  0%   { background-position:   0   0; }
-  50%  { background-position: -60px 0; }
-  100% { background-position:   0   0; }
+  0%   { background-position:     0     0; }
+  100%  { background-position: -128px 128px; }
 }
 
 #game-menu h1 {
-  margin: 64px 0;
-  font-size: 24px;
+  margin: 96px 0;
+  font-size: 36px;
   text-align: center;
   text-shadow: 0 0 0.25em black;
   -webkit-animation: 4s infinite menu-heading;
@@ -66,7 +66,7 @@
 
 #game-menu h1 strong {
   display: block;
-  font-size: 48px;
+  font-size: 2em;
   font-weight: inherit;
   line-height: 0.75em;
 }
@@ -173,6 +173,7 @@
   top: 8px;
   left: 8px;
   font-size: 24px;
+  text-shadow: 2px 2px 0 black;
 }
 
 #game-time span {

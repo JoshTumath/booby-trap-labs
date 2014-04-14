@@ -5,6 +5,33 @@
 (function() {
 "use strict";
 
+var SPRITES_URL = "images/sprites.png";
+var TILE_SIZE = 64;
+var GRID_SIZE = 10;
+
+var Tiles = {
+  floor: { x:  0, y: 0 },
+  block: { x: 64, y: 0 }
+};
+
+var BackgroundGrid = {
+  1: [
+    [Tiles.block, Tiles.block, Tiles.block, Tiles.block, Tiles.block, Tiles.block, Tiles.block, Tiles.block, Tiles.block, Tiles.block],
+    [Tiles.block, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.block],
+    [Tiles.block, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.block],
+    [Tiles.block, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.block],
+    [Tiles.block, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.block],
+    [Tiles.block, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.block],
+    [Tiles.block, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.block],
+    [Tiles.block, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.block],
+    [Tiles.block, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.floor, Tiles.block],
+    [Tiles.block, Tiles.block, Tiles.block, Tiles.block, Tiles.block, Tiles.block, Tiles.block, Tiles.block, Tiles.block, Tiles.block]
+  ]
+};
+
+var menu, settings, game, help;
+var spritesImage;
+
 /**
  * A class managing the creation and running of the game. When instanciated, it
  * creates all the elements required for the game to work.
@@ -16,10 +43,10 @@ function GameManager(element) {
   this._gameManagerElement = element;
   this._gameManagerElement.innerHTML =
       '<div id="game-menu" hidden></div>' +
-      
-      '<div id="game-controls"></div>' +
 
       '<div id="game-game" hidden></div>' +
+      
+      '<div id="game-controls"></div>' +
 
       '<div id="game-help" hidden>' +
       '  <h2>Help</h2>' +
@@ -27,18 +54,18 @@ function GameManager(element) {
       '</div>';
   
   // Instantiate the objects that deal with each element
-  this._menu = new Menu(document.getElementById("game-menu"));
-  this._settings = new Settings(document.getElementById("game-controls"));
-  this._game = new Game(document.getElementById("game-game"));
-  this._help = new Dialog(document.getElementById("game-help"));
+  menu = new Menu(document.getElementById("game-menu"));
+  settings = new Settings(document.getElementById("game-controls"));
+  game = new Game(document.getElementById("game-game"));
+  help = new Dialog(document.getElementById("game-help"));
   
   // Configure the settings
-  this._settings.initEvents(this._help);
-  this._settings.setMusic("audio/music.mp3");
+  settings.initEvents();
+  //settings.setMusic("audio/music.mp3");
   
   // Start the system
-  this._menu.initEvents(this._game);
-  this._menu.show();
+  menu.preload();
+  menu.show();
 }
 
 
@@ -53,7 +80,7 @@ function Menu(element) {
   this._menuElement.innerHTML = 
       '<h1>The <strong>Booby Trap Labs</strong></h1>' +
 
-      '<button type="button">Start</button>';
+      '<button type="button" disabled>Start</button>';
 }
 
 Menu.prototype = {
@@ -65,13 +92,20 @@ Menu.prototype = {
     this._menuElement.hidden = true;
   },
   
-  initEvents: function (game) {
-    var self = this;
+  preload: function () {
+    spritesImage = new Image(128, 64);
     
-    this._menuElement.getElementsByTagName("button")[0].addEventListener("click", function () {
-      self.hide();
-      game.start();
-    }, false);
+    var self = this;
+    spritesImage.onload = function () {
+      var startButton = self._menuElement.getElementsByTagName("button")[0];
+      startButton.disabled = false;
+      startButton.addEventListener("click", function () {
+        self.hide();
+        game.start();
+      }, false);
+    };
+    
+    spritesImage.src = SPRITES_URL;
   }
 };
 
@@ -121,17 +155,37 @@ Dialog.prototype = {
 function Game(element) {
   this._gameElement = element;
   this._gameElement.innerHTML =
-      '<canvas width="640" height="480" hidden></canvas>' +
+      '<canvas id="game-background" width="640" height="640"></canvas>' +
+      '<canvas id="game-foreground" width="640" height="640"></canvas>' +
       '<div id="game-time"></div>';
   
+  this._backgroundElement = document.getElementById("game-background");
+  this._background = this._backgroundElement.getContext("2d");
+  this._foregroundElement = document.getElementById("game-foreground");
+  this._foreground = this._foregroundElement.getContext("2d");
+  
   this._time = new TimeCounter(document.getElementById("game-time"));
+  
+  this._currentLevel = 1;
 }
 
 Game.prototype = {
   start: function () {
     this._gameElement.hidden = false;
     this._time.play();
+    this._drawBackground();
     // TODO
+  },
+  
+  _drawBackground: function () {
+    for (var x = 0; x < GRID_SIZE; x++) {
+      for (var y = 0; y < GRID_SIZE; y++) {
+        this._background.drawImage(
+            spritesImage,
+            BackgroundGrid[this._currentLevel][x][y].x, BackgroundGrid[this._currentLevel][x][y].y, TILE_SIZE, TILE_SIZE,
+            x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+      }
+    }
   }
 };
 
@@ -186,7 +240,7 @@ Settings.prototype = {
     buttonImage.alt = "Mute music";
   },
   
-  initEvents: function (help) {
+  initEvents: function () {
     var self = this;
     
     this._musicButton.addEventListener("click", function () {
