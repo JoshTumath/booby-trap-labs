@@ -271,7 +271,7 @@
           if (newPosition.x === self._position.x
               && newPosition.y === self._position.y) {
             self.drawFrame(0, direction);
-            this._currentlyMoving = false;
+            self._currentlyMoving = false;
             window.cancelAnimationFrame(requestId);
           } else {
             if (currentFrame >= TILES.player.left.length - 1) {
@@ -333,7 +333,7 @@
       this._player.drawFrame(0, "down");
       
       var self = this;
-      document.onkeypress = function (event) {
+      document.onkeyup = function (event) {
         switch (event.keyCode) {
           case 37: // Left arrow
             self._player.move("left");
