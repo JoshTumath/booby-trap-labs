@@ -173,28 +173,36 @@
       var self = this;
       var currentFrame = 0;
       
-      function animation(timestamp) {
-        window.setTimeout(function () {
-          window.requestAnimationFrame(animation);
-          
-          self._graphics.clearRect(
+      function showFrame() {
+        self._graphics.clearRect(
               0, 0,
               self._graphics.canvas.width, self._graphics.canvas.height);
 
-          self._graphics.drawImage(
-              spritesheet,
-              TILES.player.left[currentFrame].x, TILES.player.left[currentFrame].y, TILE_SIZE, TILE_SIZE,
-              5 * TILE_SIZE, 5 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-          console.log("Length:" + TILES.player.left.length);
-          console.log("currentFrame:" + currentFrame);
-          if (currentFrame >= TILES.player.left.length) {
+        self._graphics.drawImage(
+            spritesheet,
+            TILES.player.left[currentFrame].x, TILES.player.left[currentFrame].y, TILE_SIZE, TILE_SIZE,
+            5 * TILE_SIZE, 5 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+      }
+      
+      function playAnimation(timestamp) {
+        window.setTimeout(function () {
+          window.requestAnimationFrame(playAnimation);
+          
+          if (currentFrame >= TILES.player.left.length - 1) {
             currentFrame = 0;
           } else {
             currentFrame++;
           }
-        }, 50);
+          
+          showFrame();
+              
+          console.log("Length:" + TILES.player.left.length);
+          console.log("currentFrame:" + currentFrame);
+        }, 50); // Frame rate of 20 fps
       }
-      animation();
+      
+      showFrame();
+      playAnimation();
     }
   };
 
