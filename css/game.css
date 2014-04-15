@@ -13,9 +13,7 @@
 }
 
 #game-menu,
-#game-canvas,
-#game-background,
-#game-foreground {
+canvas {
   position: absolute;
   top: 0;
   right: 0;

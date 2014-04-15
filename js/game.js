@@ -11,6 +11,7 @@
   
   var GRID_SIZE = 10;
   var TILE_SIZE = 64;
+  var MOVEMENT_SPEED = 4; // Must be a factor of the TILE_SIZE
 
   /**
    * Constructs a new object containing x and y coordinates of the top left
@@ -25,6 +26,21 @@
     this.x = TILE_SIZE * x;
     this.y = TILE_SIZE * y;
   }
+  
+  Point.prototype = {
+    getX: function () {
+      return this.x / TILE_SIZE;
+    },
+    
+    getY: function () {
+      return this.y / TILE_SIZE;
+    },
+    
+    setPoint: function (x, y) {
+      this.x = TILE_SIZE * x;
+      this.y = TILE_SIZE * y;
+    }
+  };
 
   var TILES = {
     floor: new Point(0, 0),
@@ -87,6 +103,30 @@
       [TILES.block, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.block],
       [TILES.block, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.block],
       [TILES.block, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.block],
+      [TILES.block, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.block],
+      [TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block]
+    ],
+    2: [
+      [TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block],
+      [TILES.block, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.block],
+      [TILES.block, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.block],
+      [TILES.block, TILES.floor, TILES.floor, TILES.block, TILES.floor, TILES.floor, TILES.block, TILES.floor, TILES.floor, TILES.block],
+      [TILES.block, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.block],
+      [TILES.block, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.block],
+      [TILES.block, TILES.floor, TILES.floor, TILES.block, TILES.floor, TILES.floor, TILES.block, TILES.floor, TILES.floor, TILES.block],
+      [TILES.block, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.block],
+      [TILES.block, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.block],
+      [TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block]
+    ],
+    3: [
+      [TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block],
+      [TILES.block, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.block],
+      [TILES.block, TILES.floor, TILES.floor, TILES.floor, TILES.block, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.block],
+      [TILES.block, TILES.block, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.block],
+      [TILES.block, TILES.floor, TILES.block, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.block],
+      [TILES.block, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.block, TILES.floor, TILES.block],
+      [TILES.block, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.block, TILES.block],
+      [TILES.block, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.block, TILES.floor, TILES.floor, TILES.floor, TILES.block],
       [TILES.block, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.block],
       [TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block]
     ]
@@ -162,49 +202,103 @@
    * 
    * @param {CanvasRenderingContext2D} context
    */
-  function ForegroundGrid(context) {
+  function PlayerGrid(context) {
     this._graphics = context;
-    this._playerCoordinates = new Point(5, 5);
+    this._position = new Point(4, 4);
+    this._currentlyMoving = false;
   }
   
-  ForegroundGrid.prototype = {
-    // XXX
-    draw: function () {
-      var self = this;
-      var currentFrame = 0;
-      
-      function showFrame() {
-        self._graphics.clearRect(
-              0, 0,
-              self._graphics.canvas.width, self._graphics.canvas.height);
+  PlayerGrid.prototype = {
+    drawFrame: function (index, direction) {
+      this._graphics.clearRect(
+          0, 0,
+          this._graphics.canvas.width, this._graphics.canvas.height);
 
-        self._graphics.drawImage(
-            spritesheet,
-            TILES.player.left[currentFrame].x, TILES.player.left[currentFrame].y, TILE_SIZE, TILE_SIZE,
-            5 * TILE_SIZE, 5 * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+      this._graphics.drawImage(
+          spritesheet,
+          TILES.player[direction][index].x, TILES.player[direction][index].y, TILE_SIZE, TILE_SIZE,
+          this._position.x, this._position.y, TILE_SIZE, TILE_SIZE);
+    },
+    
+    _getExpectedPosition: function (direction) {
+      switch (direction) {
+        case "up":
+          return new Point(this._position.getX(), this._position.getY() - 1);
+        case "right":
+          return new Point(this._position.getX() + 1, this._position.getY());
+        case "down":
+          return new Point(this._position.getX(), this._position.getY() + 1);
+        case "left":
+          return new Point(this._position.getX() - 1, this._position.getY());
+        default:
+          return null;
+      }
+    },
+    
+    _moveToExpectedPosition: function (direction) {
+      switch (direction) {
+        case "up":
+          this._position.y -= MOVEMENT_SPEED;
+          break;
+        case "right":
+          this._position.x += MOVEMENT_SPEED;
+          break;
+        case "down":
+          this._position.y += MOVEMENT_SPEED;
+          break;
+        case "left":
+          this._position.x -= MOVEMENT_SPEED;
+          break;
+      }
+    },
+    
+    move: function (direction) {
+      if (this._currentlyMoving) {
+        return;
+      } else {
+        this._currentlyMoving = true;
       }
       
-      function playAnimation(timestamp) {
+      var currentFrame = 1;
+      var newPosition = this._getExpectedPosition(direction);
+      
+      var requestId;
+      var self = this;
+      function playAnimation() {
         window.setTimeout(function () {
-          window.requestAnimationFrame(playAnimation);
+          requestId = window.requestAnimationFrame(playAnimation);
           
-          if (currentFrame >= TILES.player.left.length - 1) {
-            currentFrame = 0;
+          if (newPosition.x === self._position.x
+              && newPosition.y === self._position.y) {
+            self.drawFrame(0, direction);
+            this._currentlyMoving = false;
+            window.cancelAnimationFrame(requestId);
           } else {
-            currentFrame++;
+            if (currentFrame >= TILES.player.left.length - 1) {
+              currentFrame = 1;
+            } else {
+              currentFrame++;
+            }
+            
+            self._moveToExpectedPosition(direction);
+            self.drawFrame(currentFrame, direction);
           }
-          
-          showFrame();
-              
-          console.log("Length:" + TILES.player.left.length);
-          console.log("currentFrame:" + currentFrame);
         }, 50); // Frame rate of 20 fps
       }
       
-      showFrame();
+      this.drawFrame(currentFrame, direction);
       playAnimation();
     }
   };
+
+
+  /**
+   * 
+   * @param {CanvasRenderingContext2D} context
+   */
+  function TrapsGrid(context) {
+    this._graphics = context;
+  }
 
   
   /**
@@ -215,14 +309,17 @@
     this._gameElement = element;
     this._gameElement.innerHTML =
         '<canvas id="game-background" width="640" height="640"></canvas>' +
-        '<canvas id="game-foreground" width="640" height="640"></canvas>' +
+        '<canvas id="game-player" width="640" height="640"></canvas>' +
+        '<canvas id="game-traps" width="640" height="640"></canvas>' +
         '<div id="game-time"></div>';
 
-    this._backgroundElement = document.getElementById("game-background");
-    this._foregroundElement = document.getElementById("game-foreground");
+    this._backgroundLayer = document.getElementById("game-background");
+    this._playerLayer = document.getElementById("game-player");
+    this._trapsLayer = document.getElementById("game-traps");
     
-    this._background = new BackgroundGrid(this._backgroundElement.getContext("2d"));
-    this._foreground = new ForegroundGrid(this._foregroundElement.getContext("2d"));
+    this._background = new BackgroundGrid(this._backgroundLayer.getContext("2d"));
+    this._player = new PlayerGrid(this._playerLayer.getContext("2d"));
+    this._traps = new TrapsGrid(this._playerLayer.getContext("2d"));
 
     this._currentLevel = 1;
     
@@ -233,8 +330,25 @@
     start: function () {
       this._gameElement.hidden = false;
       this._background.draw(this._currentLevel);
-      this._foreground.draw();
-      // TODO
+      this._player.drawFrame(0, "down");
+      
+      var self = this;
+      document.onkeypress = function (event) {
+        switch (event.keyCode) {
+          case 37: // Left arrow
+            self._player.move("left");
+            break;
+          case 38: // Up arrow
+            self._player.move("up");
+            break;
+          case 39: // Right arrow
+            self._player.move("right");
+            break;
+          case 40: // Down arrow
+            self._player.move("down");
+            break;
+        }
+      };
     },
 
     _preload: function () {
