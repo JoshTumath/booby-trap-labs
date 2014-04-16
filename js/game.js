@@ -1,5 +1,3 @@
-/*jslint vars: true */
-/*jslint browser: true, nomen: true */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -11,7 +9,8 @@
   
   var GRID_SIZE = 10;
   var TILE_SIZE = 64;
-  var MOVEMENT_SPEED = 4; // Must be a factor of the TILE_SIZE
+  var MOVEMENT_SPEED = 8; // Must be a factor of the TILE_SIZE
+  var FRAME_RATE = 1000 / 30;
 
   /**
    * Constructs a new object containing x and y coordinates of the top left
@@ -253,14 +252,19 @@
     },
     
     move: function (direction) {
+      // Prevent the user from trying to move when they're currently already
+      // moving
       if (this._currentlyMoving) {
         return;
-      } else {
-        this._currentlyMoving = true;
       }
       
       var currentFrame = 1;
       var newPosition = this._getExpectedPosition(direction);
+      
+      // Don't let the user walk onto blocks
+      if (BACKGROUND_GRID_LAYOUT[game.currentLevel][newPosition.getX()][newPosition.getY()] === TILES.block) {
+        return;
+      }
       
       var requestId;
       var self = this;
@@ -283,9 +287,10 @@
             self._moveToExpectedPosition(direction);
             self.drawFrame(currentFrame, direction);
           }
-        }, 50); // Frame rate of 20 fps
+        }, FRAME_RATE);
       }
       
+      this._currentlyMoving = true;
       this.drawFrame(currentFrame, direction);
       playAnimation();
     }
@@ -321,7 +326,7 @@
     this._player = new PlayerGrid(this._playerLayer.getContext("2d"));
     this._traps = new TrapsGrid(this._playerLayer.getContext("2d"));
 
-    this._currentLevel = 1;
+    this.currentLevel = 1;
     
     this._preload();
   }
@@ -329,7 +334,7 @@
   Game.prototype = {
     start: function () {
       this._gameElement.hidden = false;
-      this._background.draw(this._currentLevel);
+      this._background.draw(this.currentLevel);
       this._player.drawFrame(0, "down");
       
       var self = this;
@@ -394,10 +399,10 @@
 
 
   /**
-   * A class that creates a simple dialog box that appears above what is currently
-   * being displayed.
-   * @param {HTMLElement} element an empty element containing the contents of the
-   *                              dialog box
+   * A class that creates a simple dialog box that appears above what is
+   * currently being displayed.
+   * @param {HTMLElement} element an empty element containing the contents of
+   *                              the dialog box
    */
   function Dialog(element) {
     this._windowElement = element;
