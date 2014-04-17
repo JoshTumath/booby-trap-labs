@@ -280,7 +280,7 @@
           position.x, position.y, TILE_SIZE, TILE_SIZE);
     },
     
-    _animateTraps: function (shadowPosition, trapPosition) {
+    _animateTraps: function () {
       var currentFrame = 0;
       var requestId;
       var self = this;
@@ -292,27 +292,27 @@
             window.cancelAnimationFrame(requestId);
           } else {
             currentFrame++;
-
-            self._drawTrapShadowFrame(currentFrame, shadowPosition);
-            self._drawTrapFrame(currentFrame, trapPosition);
+      
+            self._drawTrapShadowFrame(currentFrame, self._trapsOnGrid[self._trapsOnGrid.length - 1]);
+            if (self._trapsOnGrid.length > 1) {
+              self._drawTrapFrame(currentFrame, self._trapsOnGrid[self._trapsOnGrid.length - 2]);
+            }
           }
         }, FRAME_RATE);
       }
       
-      this._drawTrapShadowFrame(currentFrame, shadowPosition);
-      this._drawTrapFrame(currentFrame, trapPosition);
+      this._drawTrapShadowFrame(0, this._trapsOnGrid[this._trapsOnGrid.length - 1]);
+      if (this._trapsOnGrid.length > 1) {
+        this._drawTrapFrame(0, this._trapsOnGrid[this._trapsOnGrid.length - 2]);
+      }
+      
       animate();
     },
     
     addTrap: function () {
       this._trapsOnGrid.push(this._selectRandomPoint());
       
-      //this._animateTraps(newTrapPosition, this._lastTrapPosition);
-      this._drawTrapShadowFrame(4, this._trapsOnGrid[this._trapsOnGrid.length - 1]);
-      
-      if (this._trapsOnGrid.length > 1) {
-        this._drawTrapFrame(4, this._trapsOnGrid[this._trapsOnGrid.length - 2]);
-      }
+      this._animateTraps();
     }
   };
   
