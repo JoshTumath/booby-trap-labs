@@ -38,6 +38,10 @@
     setPoint: function (x, y) {
       this.x = TILE_SIZE * x;
       this.y = TILE_SIZE * y;
+    },
+    
+    equals: function (other) {
+      return this.x === other.x && this.y === other.y;
     }
   };
 
@@ -89,7 +93,21 @@
         new Point(7, 4),
         new Point(8, 4)
       ]
-    }
+    },
+    trapShadow: [
+      new Point(0, 5),
+      new Point(1, 5),
+      new Point(2, 5),
+      new Point(3, 5),
+      new Point(4, 5)
+    ],
+    trap: [
+      new Point(0, 6),
+      new Point(1, 6),
+      new Point(2, 6),
+      new Point(3, 6),
+      new Point(4, 6)
+    ]
   };
 
   var BACKGROUND_GRID_LAYOUT = {
@@ -131,7 +149,7 @@
     ]
   };
 
-  var menu, settings, game, help;
+  var menu, help, settings, game;
   var spritesheet;
 
 
@@ -195,19 +213,121 @@
       }
     }
   };
+
+
+  /**
+   * 
+   * @param {CanvasRenderingContext2D} context
+   */
+  function Traps(context) {
+    this._graphics = context;
+    this._trapsOnGrid = [];
+    this._lastTrapPosition = null;
+  }
+  
+  Traps.prototype = {
+    _isPositionAlreadyOnGrid: function (position) {
+      for (var positionInGrid in this._trapsOnGrid) {
+        if (position.equals(this._trapsOnGrid[positionInGrid])) {
+          return true;
+        }
+      }
+      
+      return false;
+    },
+    
+    /**
+     * Selects a random point in the grid that is a floor tile and doesn't have
+     * another trap on it.
+     * @returns {Point} a random point in the grid
+     */
+    _selectRandomPoint: function () {
+      var x, y;
+      var randomPoint;
+      
+      while (true) {
+        x = Math.floor(Math.random() * (GRID_SIZE));
+        y = Math.floor(Math.random() * (GRID_SIZE));
+        
+        randomPoint = new Point(x, y);
+        
+        if (BACKGROUND_GRID_LAYOUT[game.currentLevel][randomPoint.getY()][randomPoint.getX()] !== TILES.block
+            && !this._isPositionAlreadyOnGrid(randomPoint)) {
+          return randomPoint;
+        }
+      }
+    },
+    
+    _drawTrapShadowFrame: function (index, position) {
+      this._graphics.clearRect(
+          position.x, position.y,
+          TILE_SIZE, TILE_SIZE);
+      
+      this._graphics.drawImage(
+          spritesheet,
+          TILES.trapShadow[index].x, TILES.trapShadow[index].y, TILE_SIZE, TILE_SIZE,
+          position.x, position.y, TILE_SIZE, TILE_SIZE);
+    },
+    
+    _drawTrapFrame: function (index, position) {
+      this._graphics.clearRect(
+          position.x, position.y,
+          TILE_SIZE, TILE_SIZE);
+      
+      this._graphics.drawImage(
+          spritesheet,
+          TILES.trap[index].x, TILES.trap[index].y, TILE_SIZE, TILE_SIZE,
+          position.x, position.y, TILE_SIZE, TILE_SIZE);
+    },
+    
+    _animateTraps: function (shadowPosition, trapPosition) {
+      var currentFrame = 0;
+      var requestId;
+      var self = this;
+      function animate() {
+        window.setTimeout(function () {
+          requestId = window.requestAnimationFrame(animate);
+          
+          if (currentFrame >= TILES.trap.length - 1) {
+            window.cancelAnimationFrame(requestId);
+          } else {
+            currentFrame++;
+
+            self._drawTrapShadowFrame(currentFrame, shadowPosition);
+            self._drawTrapFrame(currentFrame, trapPosition);
+          }
+        }, FRAME_RATE);
+      }
+      
+      this._drawTrapShadowFrame(currentFrame, shadowPosition);
+      this._drawTrapFrame(currentFrame, trapPosition);
+      animate();
+    },
+    
+    addTrap: function () {
+      this._trapsOnGrid.push(this._selectRandomPoint());
+      
+      //this._animateTraps(newTrapPosition, this._lastTrapPosition);
+      this._drawTrapShadowFrame(4, this._trapsOnGrid[this._trapsOnGrid.length - 1]);
+      
+      if (this._trapsOnGrid.length > 1) {
+        this._drawTrapFrame(4, this._trapsOnGrid[this._trapsOnGrid.length - 2]);
+      }
+    }
+  };
   
   
   /**
    * 
    * @param {CanvasRenderingContext2D} context
    */
-  function PlayerGrid(context) {
+  function Player(context) {
     this._graphics = context;
     this._position = new Point(4, 4);
     this._currentlyMoving = false;
   }
   
-  PlayerGrid.prototype = {
+  Player.prototype = {
     drawFrame: function (index, direction) {
       this._graphics.clearRect(
           0, 0,
@@ -253,24 +373,26 @@
     
     move: function (direction) {
       // Prevent the user from trying to move when they're currently already
-      // moving
+      // moving.
       if (this._currentlyMoving) {
         return;
       }
       
+      // Frame 0 is the idle animation, so we need to start at , which is the
+      // first sprite of the walking animation.
       var currentFrame = 1;
       var newPosition = this._getExpectedPosition(direction);
       
-      // Don't let the user walk onto blocks
-      if (BACKGROUND_GRID_LAYOUT[game.currentLevel][newPosition.getX()][newPosition.getY()] === TILES.block) {
+      // Don't let the user walk onto blocks.
+      if (BACKGROUND_GRID_LAYOUT[game.currentLevel][newPosition.getY()][newPosition.getX()] === TILES.block) {
         return;
       }
       
       var requestId;
       var self = this;
-      function playAnimation() {
+      function animate() {
         window.setTimeout(function () {
-          requestId = window.requestAnimationFrame(playAnimation);
+          requestId = window.requestAnimationFrame(animate);
           
           if (newPosition.x === self._position.x
               && newPosition.y === self._position.y) {
@@ -292,18 +414,9 @@
       
       this._currentlyMoving = true;
       this.drawFrame(currentFrame, direction);
-      playAnimation();
+      animate();
     }
   };
-
-
-  /**
-   * 
-   * @param {CanvasRenderingContext2D} context
-   */
-  function TrapsGrid(context) {
-    this._graphics = context;
-  }
 
   
   /**
@@ -314,17 +427,17 @@
     this._gameElement = element;
     this._gameElement.innerHTML =
         '<canvas id="game-background" width="640" height="640"></canvas>' +
-        '<canvas id="game-player" width="640" height="640"></canvas>' +
         '<canvas id="game-traps" width="640" height="640"></canvas>' +
+        '<canvas id="game-player" width="640" height="640"></canvas>' +
         '<div id="game-time"></div>';
 
     this._backgroundLayer = document.getElementById("game-background");
-    this._playerLayer = document.getElementById("game-player");
     this._trapsLayer = document.getElementById("game-traps");
+    this._playerLayer = document.getElementById("game-player");
     
     this._background = new BackgroundGrid(this._backgroundLayer.getContext("2d"));
-    this._player = new PlayerGrid(this._playerLayer.getContext("2d"));
-    this._traps = new TrapsGrid(this._playerLayer.getContext("2d"));
+    this._traps = new Traps(this._trapsLayer.getContext("2d"));
+    this._player = new Player(this._playerLayer.getContext("2d"));
 
     this.currentLevel = 1;
     
@@ -342,15 +455,19 @@
         switch (event.keyCode) {
           case 37: // Left arrow
             self._player.move("left");
+            self._traps.addTrap();
             break;
           case 38: // Up arrow
             self._player.move("up");
+            self._traps.addTrap();
             break;
           case 39: // Right arrow
             self._player.move("right");
+            self._traps.addTrap();
             break;
           case 40: // Down arrow
             self._player.move("down");
+            self._traps.addTrap();
             break;
         }
       };
@@ -462,6 +579,20 @@
 
     this._music = new Audio();
     this._music.loop = true;
+    
+    var self = this;
+
+    this._musicButton.addEventListener("click", function () {
+      if (self.isMuted()) {
+        self.unmute();
+      } else {
+        self.mute();
+      }
+    }, false);
+
+    this._helpButton.addEventListener("click", function () {
+      help.open();
+    }, false);
   }
 
   Settings.prototype = {
@@ -488,25 +619,8 @@
       var buttonImage = this._musicButton.getElementsByTagName("img")[0];
       buttonImage.src = "images/music.png";
       buttonImage.alt = "Mute music";
-    },
-
-    initEvents: function () {
-      var self = this;
-
-      this._musicButton.addEventListener("click", function () {
-        if (self.isMuted()) {
-          self.unmute();
-        } else {
-          self.mute();
-        }
-      }, false);
-
-      this._helpButton.addEventListener("click", function () {
-        help.open();
-      }, false);
     }
   };
-
 
 
   /**
@@ -528,13 +642,12 @@
 
     // Instantiate the objects that deal with each element
     menu = new Menu(document.getElementById("game-menu"));
+    help = new Dialog(document.getElementById("game-help"));
     settings = new Settings(document.getElementById("game-controls"));
     game = new Game(document.getElementById("game-game"));
-    help = new Dialog(document.getElementById("game-help"));
 
     // Configure the settings
-    settings.initEvents();
-    // XXX: settings.setMusic("audio/music.mp3");
+    // UNCOMMENTME: settings.setMusic("audio/music.mp3");
 
     // Start the system
     menu.show();
