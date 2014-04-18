@@ -119,7 +119,8 @@ canvas {
 /* ************ *
  * Dialog boxes *
  * ************ */
-.game-dialog {
+.game-dialog,
+#game-message {
   position: absolute;
   top: 0;
   right: 0;
@@ -160,6 +161,19 @@ canvas {
 .game-dialog h2 {
   margin: 0 0 32px;
   font-size: 32px;
+}
+
+#game-message {
+  text-align: center;
+}
+
+#game-message h1 {
+  margin: 240px 0 0;
+  font-size: 32px;
+}
+
+#game-message p {
+  margin: 0 64px;
 }
 
 

@@ -4,18 +4,19 @@
 
 (function () {
   "use strict";
-
+  
+  // Balance variables /////////////////////////////////////////////////////////
+  var MAX_TRAPS = 32;
+  var MAX_SHADOWS = 2;
+  
+  
+  // Sprite data ///////////////////////////////////////////////////////////////
   var SPRITESHEET_URL = "images/sprites.png";
   
   var GRID_SIZE = 10;
   var TILE_SIZE = 64;
   var MOVEMENT_SPEED = 8; // Must be a factor of the TILE_SIZE
   var FRAME_RATE = 1000 / 30;
-  
-  var MAX_TRAPS = 32;
-  var MAX_SHADOWS = 2;
-  var MAX_LEVELS = 3;
-
   /**
    * Constructs a new object containing x and y coordinates of the top left
    * corner of a sprite in the sprite sheet.
@@ -113,6 +114,10 @@
       new Point(4, 6)
     ]
   };
+  
+  
+  // Level data ////////////////////////////////////////////////////////////////
+  var TOTAL_LEVELS = 4;
 
   var BACKGROUND_GRID_LAYOUT = {
     1: [
@@ -150,13 +155,26 @@
       [TILES.block, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.block, TILES.floor, TILES.floor, TILES.floor, TILES.block],
       [TILES.block, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.block],
       [TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block]
+    ],
+    4: [
+      [TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block],
+      [TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block],
+      [TILES.block, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.block],
+      [TILES.block, TILES.floor, TILES.floor, TILES.block, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.block],
+      [TILES.block, TILES.floor, TILES.floor, TILES.block, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.block],
+      [TILES.block, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.block, TILES.floor, TILES.floor, TILES.block],
+      [TILES.block, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.block, TILES.floor, TILES.floor, TILES.block],
+      [TILES.block, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.floor, TILES.block],
+      [TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block],
+      [TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block]
     ]
   };
   
   var MAX_STEPS = {
     1: 35,
     2: 100,
-    3: 150
+    3: 150,
+    4: 70
   };
 
   var menu, help, settings, game;
@@ -509,7 +527,8 @@
         '<canvas id="game-background" width="640" height="640"></canvas>' +
         '<canvas id="game-traps" width="640" height="640"></canvas>' +
         '<canvas id="game-player" width="640" height="640"></canvas>' +
-        '<div id="game-stats"></div>';
+        '<div id="game-stats"></div>' +
+        '<section id="game-message" hidden></section>';
 
     this._backgroundLayer = document.getElementById("game-background");
     this._trapsLayer = document.getElementById("game-traps");
@@ -525,26 +544,91 @@
   }
 
   Game.prototype = {
+    _showMessage: function (message, submessage, duration, callback) {
+      var messageElement = document.getElementById("game-message");
+      messageElement.innerHTML = "<h1>" + message + "</h1>";
+      
+      if (submessage !== null) {
+        messageElement.innerHTML += "<p>" + submessage + "</p>";
+      }
+      
+      messageElement.hidden = false;
+      
+      if (callback) {
+        var self = this;
+        window.setTimeout(function () {
+          messageElement.hidden = true;
+          callback(self);
+        }, duration);
+      } else {
+        window.setTimeout(function () {
+          messageElement.hidden = true;
+        }, duration);
+      }
+    },
+    
     _gameOver: function () {
-      // TODO
-      window.alert("Game over");
+      document.onkeyup = null;
+      this._showMessage(
+          "Game Over",
+          "Better luck next time, Test Subject #7...",
+          5000,
+          this.end);
     },
     
     _victory: function () {
-      // TODO
-      window.alert("Victory");
+      document.onkeyup = null;
+      this._showMessage(
+          "You escaped the traps!",
+          "How did our traps fail to kill you? This is impossible!",
+          5000,
+          this.end);
     },
     
     _startNextLevel: function () {
-      if (this.statistics.level >= MAX_LEVELS) {
+      function setUpKeyboardMovement(self) {
+        document.onkeyup = self._keyboardMovement;
+      }
+      
+      if (this.statistics.level >= TOTAL_LEVELS) {
+        document.onkeyup = null;
         this._victory();
       } else {
+        document.onkeyup = null;
+        
         this.statistics.increaseLevel();
         this.statistics.reset();
 
         this._background.draw(this.statistics.level);
         this._traps.reset();
         this._player.reset();
+        
+        switch (this.statistics.level) {
+          case 1:
+            this._showMessage(
+                "Level 1",
+                "Welcome, Test Subject #7. Let's start off with a practice. " +
+                "We've given you some armour to protect yourself. Think you " +
+                "can avoid our traps?",
+                8000,
+                setUpKeyboardMovement);
+            break;
+          case 2:
+            this._showMessage(
+                "Level 2",
+                "We won't go easy on you now, Test Subject #7. We calculate " +
+                "your chances of survival are... zero.",
+                5000,
+                setUpKeyboardMovement);
+            break;
+          default:
+            this._showMessage(
+                "Level " + this.statistics.level,
+                "Feeling the pain, yet, Test Subject #7?",
+                3000,
+                setUpKeyboardMovement);
+            break;
+        }
       }
     },
     
@@ -573,34 +657,39 @@
       }
     },
     
+    _keyboardMovement: function (event) {
+      var direction;
+
+      switch (event.keyCode) {
+        case 37: // Left arrow
+          direction = "left";
+          break;
+        case 38: // Up arrow
+          direction = "up";
+          break;
+        case 39: // Right arrow
+          direction = "right";
+          break;
+        case 40: // Down arrow
+          direction = "down";
+          break;
+        default: // Abort if another key is pressed
+          return;
+      }
+
+      game._movePlayer(direction);
+    },
+    
     start: function () {
       this._gameElement.hidden = false;
       this._startNextLevel();
       settings.setMusic("audio/game.mp3");
+    },
+    
+    end: function (self) {
+      self._gameElement.hidden = true;
       
-      var self = this;
-      document.onkeyup = function (event) {
-        var direction = null;
-        
-        switch (event.keyCode) {
-          case 37: // Left arrow
-            direction = "left";
-            break;
-          case 38: // Up arrow
-            direction = "up";
-            break;
-          case 39: // Right arrow
-            direction = "right";
-            break;
-          case 40: // Down arrow
-            direction = "down";
-            break;
-          default: // Abort if another key is pressed
-            return;
-        }
-        
-        self._movePlayer(direction);
-      };
+      menu.show();
     },
 
     _preload: function () {
