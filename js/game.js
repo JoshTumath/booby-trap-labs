@@ -53,6 +53,7 @@
   var TILES = {
     floor: new Point(0, 0),
     block: new Point(1, 0),
+    controllerButtons: new Point(2, 0),
     player: {
       up: [
         new Point(0, 1),
@@ -559,12 +560,14 @@
         '<canvas id="game-background" width="640" height="640"></canvas>' +
         '<canvas id="game-traps" width="640" height="640"></canvas>' +
         '<canvas id="game-player" width="640" height="640"></canvas>' +
+        '<canvas id="game-controller" width="640" height="640"></canvas>' +
         '<div id="game-stats"></div>' +
         '<section id="game-message" hidden></section>';
 
     this._backgroundLayer = document.getElementById("game-background");
     this._trapsLayer = document.getElementById("game-traps");
     this._playerLayer = document.getElementById("game-player");
+    this._controllerLayer = document.getElementById("game-controller");
     
     this._background = new BackgroundGrid(this._backgroundLayer.getContext("2d"));
     this._traps = new Traps(this._trapsLayer.getContext("2d"));
@@ -600,7 +603,7 @@
     },
     
     _gameOver: function () {
-      document.onkeyup = null;
+      this._disableController();
       this._showMessage(
           "Game Over",
           "Better luck next time, Test Subject #7...",
@@ -609,7 +612,7 @@
     },
     
     _victory: function () {
-      document.onkeyup = null;
+      this._disableController();
       this._showMessage(
           "You escaped the traps!",
           "How did our traps fail to kill you? This is impossible!",
@@ -619,14 +622,14 @@
     
     _startNextLevel: function () {
       function setUpKeyboardMovement(self) {
-        document.onkeyup = self._keyboardMovement;
+        self._enableController();
       }
       
       if (this.statistics.level >= TOTAL_LEVELS) {
-        document.onkeyup = null;
+        this._disableController();
         this._victory();
       } else {
-        document.onkeyup = null;
+        this._disableController();
         
         this.statistics.increaseLevel();
         this.statistics.reset();
@@ -712,8 +715,62 @@
       game._movePlayer(direction);
     },
     
+    _clickMovement: function (event) {
+      function isPointInSubTile(pointX, pointY, subTileX, subTileY) {
+        if (subTileX < pointX && pointX < subTileX + (TILE_SIZE / 2)
+            && subTileY < pointY && pointY < subTileY + (TILE_SIZE / 2)) {
+          return true;
+        }
+        
+        return false;
+      }
+      
+      var boundingBox = game._controllerLayer.getBoundingClientRect();
+      var mouseX = (event.clientX - boundingBox.left) * (game._controllerLayer.width / boundingBox.width);
+      var mouseY = (event.clientY - boundingBox.top) * (game._controllerLayer.height / boundingBox.height);
+      
+      var TILE_POSITION_X = (GRID_SIZE - 1) * TILE_SIZE;
+      var TILE_POSITION_Y = (GRID_SIZE - 1) * TILE_SIZE;
+      
+      var direction;
+      
+      if (isPointInSubTile(mouseX, mouseY, TILE_POSITION_X, TILE_POSITION_Y)) {
+        direction = "up";
+      } else if (isPointInSubTile(mouseX, mouseY, TILE_POSITION_X + (TILE_SIZE / 2), TILE_POSITION_Y)) {
+        direction = "right";
+      } else if (isPointInSubTile(mouseX, mouseY, TILE_POSITION_X, TILE_POSITION_Y + (TILE_SIZE / 2))) {
+        direction = "left";
+      } else if (isPointInSubTile(mouseX, mouseY, TILE_POSITION_X + (TILE_SIZE / 2), TILE_POSITION_Y + (TILE_SIZE / 2))) {
+        direction = "down";
+      } else {
+        return;
+      }
+      
+      game._movePlayer(direction);
+    },
+    
+    _enableController: function () {
+      document.onkeyup = this._keyboardMovement;
+      this._controllerLayer.onclick = this._clickMovement;
+    },
+    
+    _disableController: function () {
+      document.onkeyup = null;
+      this._controllerLayer.onclick = null;
+    },
+    
+    _drawMouseControls: function () {
+      var position = new Point(GRID_SIZE - 1, GRID_SIZE - 1);
+      
+      this._controllerLayer.getContext("2d").drawImage(
+          spritesheet,
+          TILES.controllerButtons.x, TILES.controllerButtons.y, TILE_SIZE, TILE_SIZE,
+          position.x, position.y, TILE_SIZE, TILE_SIZE);
+    },
+    
     start: function () {
       this._gameElement.hidden = false;
+      this._drawMouseControls();
       this._startNextLevel();
       settings.setMusic("audio/game.mp3");
     },
@@ -921,7 +978,8 @@
         '  hidden trap that shoots spikes out of the floor.</p>' +
         
         '  <p><strong>Stay alive as long as you can. Use the <em>arrow ' +
-        '  keys</em> to move Test Subject #7.</strong> Keep and eye on your' +
+        '  keys</em> or <em>click the arrow buttons in the bottom right' +
+        '  corner</em> to move Test Subject #7.</strong> Keep and eye on your' +
         '  health.</p>' +
         '</div>';
 
