@@ -13,6 +13,7 @@
   var FRAME_RATE = 1000 / 30;
   
   var MAX_TRAPS = 32;
+  var MAX_SHADOWS = 2;
   var MAX_LEVELS = 3;
 
   /**
@@ -266,14 +267,26 @@
   }
   
   Traps.prototype = {
-    isPositionAlreadyOnGrid: function (position) {
-      for (var positionInGrid in this._trapsOnGrid) {
-        if (position.equals(this._trapsOnGrid[positionInGrid])) {
+    _isPositionAlreadyOnGrid: function (position) {
+      for (var i in this._trapsOnGrid) {
+        if (position.equals(this._trapsOnGrid[i])) {
           return true;
         }
       }
       
       return false;
+    },
+    
+    isTrapAt: function (position) {
+      if (this._trapsOnGrid.length < MAX_SHADOWS) {
+        return false;
+      }
+      
+      for (var i = 0; i < this._trapsOnGrid.length - MAX_SHADOWS; i++) {
+        if (position.equals(this._trapsOnGrid[i])) {
+          return true;
+        }
+      }
     },
     
     /**
@@ -292,7 +305,7 @@
         randomPoint = new Point(x, y);
         
         if (BACKGROUND_GRID_LAYOUT[game.statistics.level][randomPoint.getY()][randomPoint.getX()] !== TILES.block
-            && !this.isPositionAlreadyOnGrid(randomPoint)) {
+            && !this._isPositionAlreadyOnGrid(randomPoint)) {
           return randomPoint;
         }
       }
@@ -336,16 +349,16 @@
             currentFrame++;
       
             self._drawTrapShadowFrame(currentFrame, self._trapsOnGrid[self._trapsOnGrid.length - 1]);
-            if (self._trapsOnGrid.length > 1) {
-              self._drawTrapFrame(currentFrame, self._trapsOnGrid[self._trapsOnGrid.length - 2]);
+            if (self._trapsOnGrid.length > MAX_SHADOWS) {
+              self._drawTrapFrame(currentFrame, self._trapsOnGrid[self._trapsOnGrid.length - MAX_SHADOWS - 1]);
             }
           }
         }, FRAME_RATE);
       }
       
       this._drawTrapShadowFrame(0, this._trapsOnGrid[this._trapsOnGrid.length - 1]);
-      if (this._trapsOnGrid.length > 1) {
-        this._drawTrapFrame(0, this._trapsOnGrid[this._trapsOnGrid.length - 2]);
+      if (this._trapsOnGrid.length > MAX_SHADOWS) {
+        this._drawTrapFrame(0, this._trapsOnGrid[this._trapsOnGrid.length - MAX_SHADOWS - 1]);
         settings.playTrapSfx();
       }
       
@@ -538,9 +551,12 @@
     _movePlayer: function (direction) {
       // We need to make sure the move worked before we do anything else.
       var newPlayerPosition = this._player.move(direction);
+      
       if (newPlayerPosition !== null) {
+        this._traps.addTrap();
+        
         // Penalise the player if they walk on a trap
-        if (this._traps.isPositionAlreadyOnGrid(newPlayerPosition)) {
+        if (this._traps.isTrapAt(newPlayerPosition)) {
           // Check that there's no health left
           var isGameOver = this.statistics.reduceHealth();
           settings.playPainSfx();
@@ -549,8 +565,6 @@
             this._gameOver();
           }
         }
-        
-        this._traps.addTrap();
         
         // Is the player ready to move on to the next level?
         if (this.statistics.reduceSteps()) {
