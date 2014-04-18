@@ -877,7 +877,18 @@
 
         '<div id="game-help" hidden>' +
         '  <h2>Help</h2>' +
-        '  <p>Foo</p>' +
+        '  <p>You have been abducted and taken to a testing facility in an ' +
+        '  unknown location. You can\'t remember how you got here. You ' +
+        '  can\'t even remember your name! You\'re only known as "Test ' +
+        '  Subject #7".</p>' +
+        
+        '  <p>The testing facilty creates booby traps for state-of-the-art ' +
+        '  temples and palaces. Their newest trap is the DeathTrap 3000, a' +
+        '  hidden trap that shoots spikes out of the floor.</p>' +
+        
+        '  <p><strong>Stay alive as long as you can. Use the <em>arrow ' +
+        '  keys</em> to move Test Subject #7.</strong> Keep and eye on your' +
+        '  health.</p>' +
         '</div>';
 
     // Instantiate the objects that deal with each element
