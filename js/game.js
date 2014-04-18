@@ -11,7 +11,9 @@
   var TILE_SIZE = 64;
   var MOVEMENT_SPEED = 8; // Must be a factor of the TILE_SIZE
   var FRAME_RATE = 1000 / 30;
+  
   var MAX_TRAPS = 32;
+  var MAX_LEVELS = 3;
 
   /**
    * Constructs a new object containing x and y coordinates of the top left
@@ -151,8 +153,8 @@
   };
   
   var MAX_STEPS = {
-    1: 100,
-    2: 120,
+    1: 50,
+    2: 100,
     3: 150
   };
 
@@ -178,7 +180,7 @@
     this._healthElement = this._statisticsElement.getElementsByTagName("span")[2];
     
     this.level = 0;
-    this._stepsToGo = 0;
+    this.stepsToGo = 0;
     this._health = 100;
   }
 
@@ -188,7 +190,7 @@
     },
     
     _updateStepsToGoElement: function () {
-      this._stepsToGoElement.innerHTML = this._stepsToGo;
+      this._stepsToGoElement.innerHTML = this.stepsToGo;
     },
     
     _updateHealthElement: function () {
@@ -201,10 +203,10 @@
     },
     
     reduceSteps: function () {
-      this._stepsToGo--;
+      this.stepsToGo--;
       this._updateStepsToGoElement();
       
-      if (this._stepsToGo <= 0) {
+      if (this.stepsToGo <= 0) {
         return true;
       } else {
         return false;
@@ -223,7 +225,7 @@
     },
     
     reset: function () {
-      this._stepsToGo = MAX_STEPS[this.level];
+      this.stepsToGo = MAX_STEPS[this.level];
       this._health = 100;
       this._updateHealthElement();
       this._updateStepsToGoElement();
@@ -245,7 +247,7 @@
         for (var y = 0; y < GRID_SIZE; y++) {
           this._graphics.drawImage(
               spritesheet,
-              BACKGROUND_GRID_LAYOUT[level][x][y].x, BACKGROUND_GRID_LAYOUT[level][x][y].y, TILE_SIZE, TILE_SIZE,
+              BACKGROUND_GRID_LAYOUT[level][y][x].x, BACKGROUND_GRID_LAYOUT[level][y][x].y, TILE_SIZE, TILE_SIZE,
               x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
         }
       }
@@ -289,7 +291,7 @@
         
         randomPoint = new Point(x, y);
         
-        if (BACKGROUND_GRID_LAYOUT[game._statistics.level][randomPoint.getY()][randomPoint.getX()] !== TILES.block
+        if (BACKGROUND_GRID_LAYOUT[game.statistics.level][randomPoint.getY()][randomPoint.getX()] !== TILES.block
             && !this.isPositionAlreadyOnGrid(randomPoint)) {
           return randomPoint;
         }
@@ -357,7 +359,17 @@
         this._clearFrame(this._trapsOnGrid.shift());
       }
       
-      this._animateTraps();
+      if (game.statistics.stepsToGo > 1) {
+        this._animateTraps();
+      }
+    },
+    
+    reset: function () {
+      this._trapsOnGrid = [];
+      
+      this._graphics.clearRect(
+          0, 0,
+          this._graphics.canvas.width, this._graphics.canvas.height);
     }
   };
   
@@ -429,7 +441,7 @@
       var newPosition = this._getExpectedPosition(direction);
       
       // Don't let the user walk onto blocks.
-      if (BACKGROUND_GRID_LAYOUT[game._statistics.level][newPosition.getY()][newPosition.getX()] === TILES.block) {
+      if (BACKGROUND_GRID_LAYOUT[game.statistics.level][newPosition.getY()][newPosition.getX()] === TILES.block) {
         return null;
       }
       
@@ -457,14 +469,16 @@
         }, FRAME_RATE);
       }
       
-      this._currentlyMoving = true;
-      this.drawFrame(currentFrame, direction);
-      animate();
+      if (game.statistics.stepsToGo > 1) {
+        this._currentlyMoving = true;
+        this.drawFrame(currentFrame, direction);
+        animate();
+      }
       
       return newPosition;
     },
     
-    resetPosition: function () {
+    reset: function () {
       this.position = new Point(4, 4);
       this.drawFrame(0, "down");
     }
@@ -491,22 +505,33 @@
     this._traps = new Traps(this._trapsLayer.getContext("2d"));
     this._player = new Player(this._playerLayer.getContext("2d"));
     
-    this._statistics = new Statistics(document.getElementById("game-stats"));
+    this.statistics = new Statistics(document.getElementById("game-stats"));
     
     this._preload();
   }
 
   Game.prototype = {
-    _startNextLevel: function () {
-      this._statistics.increaseLevel();
-      this._statistics.reset();
-      this._background.draw(this._statistics.level);
-      this._player.resetPosition();
-    },
-    
     _gameOver: function () {
       // TODO
-      console.log("Game over");
+      window.alert("Game over");
+    },
+    
+    _victory: function () {
+      // TODO
+      window.alert("Victory");
+    },
+    
+    _startNextLevel: function () {
+      if (this.statistics.level >= MAX_LEVELS) {
+        this._victory();
+      } else {
+        this.statistics.increaseLevel();
+        this.statistics.reset();
+
+        this._background.draw(this.statistics.level);
+        this._traps.reset();
+        this._player.reset();
+      }
     },
     
     _movePlayer: function (direction) {
@@ -518,13 +543,13 @@
         // Penalise the player if they walk on a trap
         if (this._traps.isPositionAlreadyOnGrid(newPlayerPosition)) {
           // Check that there's no health left
-          if (this._statistics.reduceHealth()) {
+          if (this.statistics.reduceHealth()) {
             this._gameOver();
           }
         }
         
-        // Is the player reasy to move on to the next level?
-        if (this._statistics.reduceSteps()) {
+        // Is the player ready to move on to the next level?
+        if (this.statistics.reduceSteps()) {
           this._startNextLevel();
         }
       }
