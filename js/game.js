@@ -191,21 +191,42 @@
   function Statistics(element) {
     this._statisticsElement = element;
     this._statisticsElement.innerHTML =
-        '<p><strong>Level:</strong> <span></span>' +
+        '<p><strong>Level:</strong> <span></span> (highest ever: <span></span>)' +
         '<p><strong>Steps to go:</strong> <span></span>' +
         '<p><strong>Health:</strong> <span>100</span>%</p>';
     this._levelElement = this._statisticsElement.getElementsByTagName("span")[0];
-    this._stepsToGoElement = this._statisticsElement.getElementsByTagName("span")[1];
-    this._healthElement = this._statisticsElement.getElementsByTagName("span")[2];
+    this._highestLevelElement = this._statisticsElement.getElementsByTagName("span")[1];
+    this._stepsToGoElement = this._statisticsElement.getElementsByTagName("span")[2];
+    this._healthElement = this._statisticsElement.getElementsByTagName("span")[3];
     
     this.level = 0;
+    this._highestLevel = this._loadHighestLevel();
     this.stepsToGo = 0;
     this._health = 100;
   }
 
   Statistics.prototype = {
+    _loadHighestLevel: function () {
+      // If this is a first run, there will be no highest level saved.
+      if (!window.localStorage || !window.localStorage.highestLevel) {
+        return 0;
+      }
+      
+      return parseInt(window.localStorage.highestLevel);
+    },
+    
+    saveHighestLevel: function () {
+      if (window.localStorage) {
+        window.localStorage.highestLevel = this._highestLevel;
+      }
+    },
+    
     _updateLevelElement: function () {
       this._levelElement.innerHTML = this.level;
+    },
+    
+    _updateHighestLevelElement: function () {
+      this._highestLevelElement.innerHTML = this._highestLevel;
     },
     
     _updateStepsToGoElement: function () {
@@ -219,6 +240,12 @@
     increaseLevel: function () {
       this.level++;
       this._updateLevelElement();
+      
+      // Make sure the highscore isn't lower than the current level
+      if (this._highestLevel < this.level) {
+        this._highestLevel = this.level;
+        this._updateHighestLevelElement();
+      }
     },
     
     reduceSteps: function () {
@@ -248,6 +275,11 @@
       this._health = 100;
       this._updateHealthElement();
       this._updateStepsToGoElement();
+    },
+    
+    resetAll: function () {
+      this.reset();
+      this.level = 0;
     }
   };
   
@@ -688,6 +720,8 @@
     
     end: function (self) {
       self._gameElement.hidden = true;
+      self.statistics.saveHighestLevel();
+      self.statistics.resetAll();
       
       menu.show();
     },
