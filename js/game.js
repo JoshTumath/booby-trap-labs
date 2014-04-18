@@ -538,8 +538,6 @@
       // We need to make sure the move worked before we do anything else.
       var newPlayerPosition = this._player.move(direction);
       if (newPlayerPosition !== null) {
-        this._traps.addTrap();
-
         // Penalise the player if they walk on a trap
         if (this._traps.isPositionAlreadyOnGrid(newPlayerPosition)) {
           // Check that there's no health left
@@ -547,6 +545,8 @@
             this._gameOver();
           }
         }
+        
+        this._traps.addTrap();
         
         // Is the player ready to move on to the next level?
         if (this.statistics.reduceSteps()) {
@@ -558,6 +558,7 @@
     start: function () {
       this._gameElement.hidden = false;
       this._startNextLevel();
+      settings.setMusic("audio/game.mp3");
       
       var self = this;
       document.onkeyup = function (event) {
@@ -618,6 +619,7 @@
   Menu.prototype = {
     show: function () {
       this._menuElement.hidden = false;
+      settings.setMusic("audio/menu.mp3");
     },
 
     hide: function () {
@@ -756,9 +758,6 @@
     help = new Dialog(document.getElementById("game-help"));
     settings = new Settings(document.getElementById("game-controls"));
     game = new Game(document.getElementById("game-game"));
-
-    // Configure the settings
-    // UNCOMMENTME: settings.setMusic("audio/music.mp3");
 
     // Start the system
     menu.show();

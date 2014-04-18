@@ -181,9 +181,4 @@ canvas {
 #game-stats strong {
   display: inline-block;
   min-width: 6em;
-  font-weight: normal;
-}
-
-#game-stats span {
-  font-family: monospace;
 }
