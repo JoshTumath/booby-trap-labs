@@ -166,14 +166,24 @@ canvas {
 /* ******** *
  * Gameplay *
  * ******** */
-#game-time {
+#game-stats {
   position: absolute;
   top: 8px;
   left: 8px;
-  font-size: 24px;
-  text-shadow: 2px 2px 0 black;
+  font-size: 13px;
+  text-shadow: 1px 1px 0 black;
 }
 
-#game-time span {
+#game-stats p {
+  margin: 0;
+}
+
+#game-stats strong {
+  display: inline-block;
+  min-width: 6em;
+  font-weight: normal;
+}
+
+#game-stats span {
   font-family: monospace;
 }

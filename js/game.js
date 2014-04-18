@@ -11,6 +11,7 @@
   var TILE_SIZE = 64;
   var MOVEMENT_SPEED = 8; // Must be a factor of the TILE_SIZE
   var FRAME_RATE = 1000 / 30;
+  var MAX_TRAPS = 32;
 
   /**
    * Constructs a new object containing x and y coordinates of the top left
@@ -148,47 +149,84 @@
       [TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block, TILES.block]
     ]
   };
+  
+  var MAX_STEPS = {
+    1: 100,
+    2: 120,
+    3: 150
+  };
 
   var menu, help, settings, game;
   var spritesheet;
 
+  //////////////////////////////////////////////////////////////////////////////
 
   /**
-   * A class managing a counter that can be stopped and started.
+   * Creates a board showing statistics for the current level, steps to go to
+   * complete the level and the player health.
    * @param {HTMLElement} element an empty element containing a placeholder for
-   *                              the timer
+   *                              the statistics
    */
-  function TimeCounter(element) {
-    this._timeElement = element;
-    this._timeElement.innerHTML = 'Time: <span>0</span>';
-    this._counterElement = this._timeElement.getElementsByTagName("span")[0];
-
-    this._seconds = 0;
+  function Statistics(element) {
+    this._statisticsElement = element;
+    this._statisticsElement.innerHTML =
+        '<p><strong>Level:</strong> <span></span>' +
+        '<p><strong>Steps to go:</strong> <span></span>' +
+        '<p><strong>Health:</strong> <span>100</span>%</p>';
+    this._levelElement = this._statisticsElement.getElementsByTagName("span")[0];
+    this._stepsToGoElement = this._statisticsElement.getElementsByTagName("span")[1];
+    this._healthElement = this._statisticsElement.getElementsByTagName("span")[2];
+    
+    this.level = 0;
+    this._stepsToGo = 0;
+    this._health = 100;
   }
 
-  TimeCounter.prototype = {
-    play: function () {
-      var self = this;
-
-      self._interval = window.setInterval(function () {
-        self._seconds++;
-        self._writeTime();
-      }, 1000);
+  Statistics.prototype = {
+    _updateLevelElement: function () {
+      this._levelElement.innerHTML = this.level;
     },
-
-    pause: function () {
-      window.clearInterval(this._interval);
+    
+    _updateStepsToGoElement: function () {
+      this._stepsToGoElement.innerHTML = this._stepsToGo;
     },
-
+    
+    _updateHealthElement: function () {
+      this._healthElement.innerHTML = this._health;
+    },
+    
+    increaseLevel: function () {
+      this.level++;
+      this._updateLevelElement();
+    },
+    
+    reduceSteps: function () {
+      this._stepsToGo--;
+      this._updateStepsToGoElement();
+      
+      if (this._stepsToGo <= 0) {
+        return true;
+      } else {
+        return false;
+      }
+    },
+    
+    reduceHealth: function () {
+      this._health -= 20;
+      this._updateHealthElement();
+      
+      if (this._health <= 0) {
+        return true;
+      } else {
+        return false;
+      }
+    },
+    
     reset: function () {
-      this.pause();
-      this._seconds = 0;
-      this._writeTime();
-    },
-
-    _writeTime: function () {
-      // XXX: Would be better if displayed minutes and seconds
-      this._counterElement.innerHTML = this._seconds;
+      this._stepsToGo = MAX_STEPS[this.level];
+      this._health = 100;
+      this._updateHealthElement();
+      this._updateStepsToGoElement();
     }
   };
   
@@ -226,7 +264,7 @@
   }
   
   Traps.prototype = {
-    _isPositionAlreadyOnGrid: function (position) {
+    isPositionAlreadyOnGrid: function (position) {
       for (var positionInGrid in this._trapsOnGrid) {
         if (position.equals(this._trapsOnGrid[positionInGrid])) {
           return true;
@@ -251,17 +289,21 @@
         
         randomPoint = new Point(x, y);
         
-        if (BACKGROUND_GRID_LAYOUT[game.currentLevel][randomPoint.getY()][randomPoint.getX()] !== TILES.block
-            && !this._isPositionAlreadyOnGrid(randomPoint)) {
+        if (BACKGROUND_GRID_LAYOUT[game._statistics.level][randomPoint.getY()][randomPoint.getX()] !== TILES.block
+            && !this.isPositionAlreadyOnGrid(randomPoint)) {
           return randomPoint;
         }
       }
     },
     
-    _drawTrapShadowFrame: function (index, position) {
+    _clearFrame: function (position) {
       this._graphics.clearRect(
           position.x, position.y,
           TILE_SIZE, TILE_SIZE);
+    },
+    
+    _drawTrapShadowFrame: function (index, position) {
+      this._clearFrame(position);
       
       this._graphics.drawImage(
           spritesheet,
@@ -270,9 +312,7 @@
     },
     
     _drawTrapFrame: function (index, position) {
-      this._graphics.clearRect(
-          position.x, position.y,
-          TILE_SIZE, TILE_SIZE);
+      this._clearFrame(position);
       
       this._graphics.drawImage(
           spritesheet,
@@ -312,6 +352,11 @@
     addTrap: function () {
       this._trapsOnGrid.push(this._selectRandomPoint());
       
+      // We need to remove traps if there's too many
+      if (this._trapsOnGrid.length > MAX_TRAPS) {
+        this._clearFrame(this._trapsOnGrid.shift());
+      }
+      
       this._animateTraps();
     }
   };
@@ -323,7 +368,7 @@
    */
   function Player(context) {
     this._graphics = context;
-    this._position = new Point(4, 4);
+    this.position = new Point(4, 4);
     this._currentlyMoving = false;
   }
   
@@ -336,19 +381,19 @@
       this._graphics.drawImage(
           spritesheet,
           TILES.player[direction][index].x, TILES.player[direction][index].y, TILE_SIZE, TILE_SIZE,
-          this._position.x, this._position.y, TILE_SIZE, TILE_SIZE);
+          this.position.x, this.position.y, TILE_SIZE, TILE_SIZE);
     },
     
     _getExpectedPosition: function (direction) {
       switch (direction) {
         case "up":
-          return new Point(this._position.getX(), this._position.getY() - 1);
+          return new Point(this.position.getX(), this.position.getY() - 1);
         case "right":
-          return new Point(this._position.getX() + 1, this._position.getY());
+          return new Point(this.position.getX() + 1, this.position.getY());
         case "down":
-          return new Point(this._position.getX(), this._position.getY() + 1);
+          return new Point(this.position.getX(), this.position.getY() + 1);
         case "left":
-          return new Point(this._position.getX() - 1, this._position.getY());
+          return new Point(this.position.getX() - 1, this.position.getY());
         default:
           return null;
       }
@@ -357,16 +402,16 @@
     _moveToExpectedPosition: function (direction) {
       switch (direction) {
         case "up":
-          this._position.y -= MOVEMENT_SPEED;
+          this.position.y -= MOVEMENT_SPEED;
           break;
         case "right":
-          this._position.x += MOVEMENT_SPEED;
+          this.position.x += MOVEMENT_SPEED;
           break;
         case "down":
-          this._position.y += MOVEMENT_SPEED;
+          this.position.y += MOVEMENT_SPEED;
           break;
         case "left":
-          this._position.x -= MOVEMENT_SPEED;
+          this.position.x -= MOVEMENT_SPEED;
           break;
       }
     },
@@ -375,7 +420,7 @@
       // Prevent the user from trying to move when they're currently already
       // moving.
       if (this._currentlyMoving) {
-        return;
+        return null;
       }
       
       // Frame 0 is the idle animation, so we need to start at , which is the
@@ -384,8 +429,8 @@
       var newPosition = this._getExpectedPosition(direction);
       
       // Don't let the user walk onto blocks.
-      if (BACKGROUND_GRID_LAYOUT[game.currentLevel][newPosition.getY()][newPosition.getX()] === TILES.block) {
-        return;
+      if (BACKGROUND_GRID_LAYOUT[game._statistics.level][newPosition.getY()][newPosition.getX()] === TILES.block) {
+        return null;
       }
       
       var requestId;
@@ -394,8 +439,8 @@
         window.setTimeout(function () {
           requestId = window.requestAnimationFrame(animate);
           
-          if (newPosition.x === self._position.x
-              && newPosition.y === self._position.y) {
+          if (newPosition.x === self.position.x
+              && newPosition.y === self.position.y) {
             self.drawFrame(0, direction);
             self._currentlyMoving = false;
             window.cancelAnimationFrame(requestId);
@@ -415,6 +460,13 @@
       this._currentlyMoving = true;
       this.drawFrame(currentFrame, direction);
       animate();
+      
+      return newPosition;
+    },
+    
+    resetPosition: function () {
+      this.position = new Point(4, 4);
+      this.drawFrame(0, "down");
     }
   };
 
@@ -429,7 +481,7 @@
         '<canvas id="game-background" width="640" height="640"></canvas>' +
         '<canvas id="game-traps" width="640" height="640"></canvas>' +
         '<canvas id="game-player" width="640" height="640"></canvas>' +
-        '<div id="game-time"></div>';
+        '<div id="game-stats"></div>';
 
     this._backgroundLayer = document.getElementById("game-background");
     this._trapsLayer = document.getElementById("game-traps");
@@ -438,38 +490,72 @@
     this._background = new BackgroundGrid(this._backgroundLayer.getContext("2d"));
     this._traps = new Traps(this._trapsLayer.getContext("2d"));
     this._player = new Player(this._playerLayer.getContext("2d"));
-
-    this.currentLevel = 1;
+    
+    this._statistics = new Statistics(document.getElementById("game-stats"));
     
     this._preload();
   }
 
   Game.prototype = {
+    _startNextLevel: function () {
+      this._statistics.increaseLevel();
+      this._statistics.reset();
+      this._background.draw(this._statistics.level);
+      this._player.resetPosition();
+    },
+    
+    _gameOver: function () {
+      // TODO
+      console.log("Game over");
+    },
+    
+    _movePlayer: function (direction) {
+      // We need to make sure the move worked before we do anything else.
+      var newPlayerPosition = this._player.move(direction);
+      if (newPlayerPosition !== null) {
+        this._traps.addTrap();
+
+        // Penalise the player if they walk on a trap
+        if (this._traps.isPositionAlreadyOnGrid(newPlayerPosition)) {
+          // Check that there's no health left
+          if (this._statistics.reduceHealth()) {
+            this._gameOver();
+          }
+        }
+        
+        // Is the player reasy to move on to the next level?
+        if (this._statistics.reduceSteps()) {
+          this._startNextLevel();
+        }
+      }
+    },
+    
     start: function () {
       this._gameElement.hidden = false;
-      this._background.draw(this.currentLevel);
-      this._player.drawFrame(0, "down");
+      this._startNextLevel();
       
       var self = this;
       document.onkeyup = function (event) {
+        var direction = null;
+        
         switch (event.keyCode) {
           case 37: // Left arrow
-            self._player.move("left");
-            self._traps.addTrap();
+            direction = "left";
             break;
           case 38: // Up arrow
-            self._player.move("up");
-            self._traps.addTrap();
+            direction = "up";
             break;
           case 39: // Right arrow
-            self._player.move("right");
-            self._traps.addTrap();
+            direction = "right";
             break;
           case 40: // Down arrow
-            self._player.move("down");
-            self._traps.addTrap();
+            direction = "down";
             break;
+          default: // Abort if another key is pressed
+            return;
         }
+        
+        self._movePlayer(direction);
       };
     },
 
