@@ -346,6 +346,7 @@
       this._drawTrapShadowFrame(0, this._trapsOnGrid[this._trapsOnGrid.length - 1]);
       if (this._trapsOnGrid.length > 1) {
         this._drawTrapFrame(0, this._trapsOnGrid[this._trapsOnGrid.length - 2]);
+        settings.playTrapSfx();
       }
       
       animate();
@@ -541,7 +542,10 @@
         // Penalise the player if they walk on a trap
         if (this._traps.isPositionAlreadyOnGrid(newPlayerPosition)) {
           // Check that there's no health left
-          if (this.statistics.reduceHealth()) {
+          var isGameOver = this.statistics.reduceHealth();
+          settings.playPainSfx();
+          
+          if (isGameOver) {
             this._gameOver();
           }
         }
@@ -693,6 +697,9 @@
     this._music = new Audio();
     this._music.loop = true;
     
+    this._trapSfx = new Audio("audio/spike.mp3");
+    this._painSfx = new Audio("audio/pain.mp3");
+    
     var self = this;
 
     this._musicButton.addEventListener("click", function () {
@@ -713,6 +720,22 @@
       this._music.src = file;
       this._music.play();
     },
+    
+    playTrapSfx: function () {
+      // Don't play if audio is muted
+      if (!this.isMuted()) {
+        this._trapSfx.currentTime = 0;
+        this._trapSfx.play();
+      }
+    },
+    
+    playPainSfx: function () {
+      // Don't play if audio is muted
+      if (!this.isMuted()) {
+        this._painSfx.currentTime = 0;
+        this._painSfx.play();
+      }
+    },
 
     isMuted: function () {
       return this._music.muted;
@@ -728,6 +751,7 @@
 
     unmute: function () {
       this._music.muted = false;
+      this._mutedSfx = false;
 
       var buttonImage = this._musicButton.getElementsByTagName("img")[0];
       buttonImage.src = "images/music.png";
